@@ -44,8 +44,11 @@ void identify(homekit_value_t _value) {
     printf("Temperature sensor identify\n");
 }
 
-homekit_characteristic_t temperature = HOMEKIT_CHARACTERISTIC_(CURRENT_TEMPERATURE, 0);
-homekit_characteristic_t humidity    = HOMEKIT_CHARACTERISTIC_(CURRENT_RELATIVE_HUMIDITY, 0);
+homekit_characteristic_t temperature   = HOMEKIT_CHARACTERISTIC_(CURRENT_TEMPERATURE, 0);
+homekit_characteristic_t temperature2m = HOMEKIT_CHARACTERISTIC_(CURRENT_TEMPERATURE, 2);
+homekit_characteristic_t temperature1h = HOMEKIT_CHARACTERISTIC_(CURRENT_TEMPERATURE, 3);
+homekit_characteristic_t temperature1d = HOMEKIT_CHARACTERISTIC_(CURRENT_TEMPERATURE, 4);
+homekit_characteristic_t humidity      = HOMEKIT_CHARACTERISTIC_(CURRENT_RELATIVE_HUMIDITY, 0);
 
 
 void temperature_sensor_task(void *_args) {
@@ -95,13 +98,19 @@ homekit_accessory_t *accessories[] = {
                 .characteristics=(homekit_characteristic_t*[]){
                     HOMEKIT_CHARACTERISTIC(NAME, "Temperature"),
                     &temperature,
-                    &ota_trigger,
+                    NULL
+                }),
+            HOMEKIT_SERVICE(TEMPERATURE_SENSOR,
+                .characteristics=(homekit_characteristic_t*[]){
+                    HOMEKIT_CHARACTERISTIC(NAME, "Temperature-2min"),
+                    &temperature2m,
                     NULL
                 }),
             HOMEKIT_SERVICE(HUMIDITY_SENSOR,
                 .characteristics=(homekit_characteristic_t*[]){
                     HOMEKIT_CHARACTERISTIC(NAME, "Humidity"),
                     &humidity,
+                    &ota_trigger,
                     NULL
                 }),
             NULL
