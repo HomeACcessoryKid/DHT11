@@ -44,38 +44,84 @@ void identify(homekit_value_t _value) {
     printf("Temperature sensor identify\n");
 }
 
-homekit_characteristic_t temperature   = HOMEKIT_CHARACTERISTIC_(CURRENT_TEMPERATURE, 0);
 homekit_characteristic_t temperature2m = HOMEKIT_CHARACTERISTIC_(CURRENT_TEMPERATURE, 2);
 homekit_characteristic_t temperature1h = HOMEKIT_CHARACTERISTIC_(CURRENT_TEMPERATURE, 3);
 homekit_characteristic_t temperature1d = HOMEKIT_CHARACTERISTIC_(CURRENT_TEMPERATURE, 4);
-homekit_characteristic_t humidity      = HOMEKIT_CHARACTERISTIC_(CURRENT_RELATIVE_HUMIDITY, 0);
+homekit_characteristic_t humidity      = HOMEKIT_CHARACTERISTIC_(CURRENT_RELATIVE_HUMIDITY, 1);
 
-
+#define SEC 24
+#define MIN 30
+#define  HR 24
 void temperature_sensor_task(void *_args) {
     gpio_set_pullup(SENSOR_PIN, false, false);
 
     float humidity_value, temperature_value;
+    float sec5[SEC];
+    float min2[MIN];
+    float  hr1[HR];
+    float day=99,mini=99,maxi=99;
+    int i,sec=0,min=0,hr=0;
+    int secmax=1,minmax=1,hrmax=1;
+    
     while (1) {
+        vTaskDelay(5000 / portTICK_PERIOD_MS); //5 seconds
         bool success = dht_read_float_data(
             DHT_TYPE_DHT11, SENSOR_PIN,
             &humidity_value, &temperature_value
         );
         if (success) {
-            temperature.value.float_value = temperature_value;
-            humidity.value.float_value = humidity_value;
+            secmax=(secmax>sec+1)?secmax:sec+1;
+            minmax=(minmax>min+1)?minmax:min+1;
+            hrmax =( hrmax>hr +1)? hrmax: hr+1;
+            
+            sec5[sec]=temperature_value;
+            
+            min2[min]=0;
+            for (i=0;i<secmax;i++) min2[min]+=sec5[i]/secmax;
+            temperature2m.value.float_value = min2[min];
+            homekit_characteristic_notify(&temperature2m, HOMEKIT_FLOAT(min2[min]));
+            
+            hr1[hr]=0;
+            for (i=0;i<minmax;i++)   hr1[hr]+=min2[i]/minmax;
+            temperature1h.value.float_value = hr1[hr];
+            homekit_characteristic_notify(&temperature1h, HOMEKIT_FLOAT(hr1[hr]));
+            
+            day=0;
+            for (i=0;i<hrmax;i++)        day+=hr1[i]/hrmax;
+            temperature1d.value.float_value = day;
+            homekit_characteristic_notify(&temperature1d, HOMEKIT_FLOAT(day));
 
-            homekit_characteristic_notify(&temperature, HOMEKIT_FLOAT(temperature_value));
+            if (min==0) { //running average every hour over the last day
+                mini=99;maxi=-99;
+                for (i=0;i<hrmax;i++) {
+                    mini=(mini<hr1[i])?mini:hr1[i];
+                    maxi=(maxi>hr1[i])?maxi:hr1[i];
+                }
+            }
+
+            printf("   day=%2.1f, min=%2.1f, max=%2.1f, latest=%2.1f\nsec=%2d ",day,mini,maxi,temperature_value,sec);            
+            for (i=0;i<SEC;i++)  printf("%2.1f, ",sec5[i]); printf("\nmin=%2d ",min);
+            for (i=0;i<MIN;i++)  printf("%2.1f, ",min2[i]); printf("\n hr=%2d ", hr);
+            for (i=0;i<HR ;i++)  printf("%2.1f, ", hr1[i]); printf("\n");
+
+            sec++;
+            if (sec==SEC) {
+                sec=0; min++;
+                if (min==MIN) {
+                    min=0; hr++;
+                    if (hr==HR) hr=0;
+            }   } //take care of timer values
+
+            humidity.value.float_value = humidity_value;
             homekit_characteristic_notify(&humidity, HOMEKIT_FLOAT(humidity_value));
         } else {
             printf("Couldnt read data from sensor\n");
         }
-
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
 
 void temperature_sensor_init() {
-    xTaskCreate(temperature_sensor_task, "Temperatore Sensor", 256, NULL, 2, NULL);
+    xTaskCreate(temperature_sensor_task, "Temperatore Sensor", 512, NULL, 2, NULL);
 }
 
 
@@ -96,14 +142,20 @@ homekit_accessory_t *accessories[] = {
                 }),
             HOMEKIT_SERVICE(TEMPERATURE_SENSOR, .primary=true,
                 .characteristics=(homekit_characteristic_t*[]){
-                    HOMEKIT_CHARACTERISTIC(NAME, "Temperature"),
-                    &temperature,
+                    HOMEKIT_CHARACTERISTIC(NAME, "T2min"),
+                    &temperature2m,
                     NULL
                 }),
             HOMEKIT_SERVICE(TEMPERATURE_SENSOR,
                 .characteristics=(homekit_characteristic_t*[]){
-                    HOMEKIT_CHARACTERISTIC(NAME, "Temperature-2min"),
-                    &temperature2m,
+                    HOMEKIT_CHARACTERISTIC(NAME, "T1hr"),
+                    &temperature1h,
+                    NULL
+                }),
+            HOMEKIT_SERVICE(TEMPERATURE_SENSOR,
+                .characteristics=(homekit_characteristic_t*[]){
+                    HOMEKIT_CHARACTERISTIC(NAME, "T1day"),
+                    &temperature1d,
                     NULL
                 }),
             HOMEKIT_SERVICE(HUMIDITY_SENSOR,
