@@ -152,12 +152,14 @@ homekit_accessory_t *accessories[] = {
                     &temperature1h,
                     NULL
                 }),
+                /*
             HOMEKIT_SERVICE(TEMPERATURE_SENSOR,
                 .characteristics=(homekit_characteristic_t*[]){
                     HOMEKIT_CHARACTERISTIC(NAME, "T1day"),
                     &temperature1d,
                     NULL
                 }),
+                */
             HOMEKIT_SERVICE(HUMIDITY_SENSOR,
                 .characteristics=(homekit_characteristic_t*[]){
                     HOMEKIT_CHARACTERISTIC(NAME, "Humidity"),
