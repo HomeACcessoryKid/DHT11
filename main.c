@@ -142,13 +142,13 @@ homekit_accessory_t *accessories[] = {
                 }),
             HOMEKIT_SERVICE(TEMPERATURE_SENSOR, .primary=true,
                 .characteristics=(homekit_characteristic_t*[]){
-                    HOMEKIT_CHARACTERISTIC(NAME, "T2min"),
+                    HOMEKIT_CHARACTERISTIC(NAME, "T-2min"),
                     &temperature2m,
                     NULL
                 }),
             HOMEKIT_SERVICE(TEMPERATURE_SENSOR,
                 .characteristics=(homekit_characteristic_t*[]){
-                    HOMEKIT_CHARACTERISTIC(NAME, "T1hr"),
+                    HOMEKIT_CHARACTERISTIC(NAME, "T-1hr"),
                     &temperature1h,
                     NULL
                 }),
