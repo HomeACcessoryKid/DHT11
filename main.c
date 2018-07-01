@@ -140,6 +140,13 @@ homekit_accessory_t *accessories[] = {
                     HOMEKIT_CHARACTERISTIC(IDENTIFY, identify),
                     NULL
                 }),
+            HOMEKIT_SERVICE(HUMIDITY_SENSOR, .id=10,
+                .characteristics=(homekit_characteristic_t*[]){
+                    HOMEKIT_CHARACTERISTIC(NAME, "Humidity"),
+                    &humidity,
+                    &ota_trigger,
+                    NULL
+                }),
             HOMEKIT_SERVICE(TEMPERATURE_SENSOR, .primary=true,
                 .characteristics=(homekit_characteristic_t*[]){
                     HOMEKIT_CHARACTERISTIC(NAME, "T-2min"),
@@ -148,23 +155,14 @@ homekit_accessory_t *accessories[] = {
                 }),
             HOMEKIT_SERVICE(TEMPERATURE_SENSOR,
                 .characteristics=(homekit_characteristic_t*[]){
-                    HOMEKIT_CHARACTERISTIC(NAME, "T-1hr"),
+                    HOMEKIT_CHARACTERISTIC(NAME, "T1hr"),
                     &temperature1h,
                     NULL
                 }),
-                /*
             HOMEKIT_SERVICE(TEMPERATURE_SENSOR,
                 .characteristics=(homekit_characteristic_t*[]){
-                    HOMEKIT_CHARACTERISTIC(NAME, "T1day"),
+                    HOMEKIT_CHARACTERISTIC(NAME, "T_1day"),
                     &temperature1d,
-                    NULL
-                }),
-                */
-            HOMEKIT_SERVICE(HUMIDITY_SENSOR,
-                .characteristics=(homekit_characteristic_t*[]){
-                    HOMEKIT_CHARACTERISTIC(NAME, "Humidity"),
-                    &humidity,
-                    &ota_trigger,
                     NULL
                 }),
             NULL
@@ -185,6 +183,7 @@ void user_init(void) {
     int c_hash=ota_read_sysparam(&manufacturer.value.string_value,&serial.value.string_value,
                                       &model.value.string_value,&revision.value.string_value);
     if (c_hash==0) c_hash=1;
+    //c_hash=8; revision.value.string_value="0.0.8"; //cheat line
     config.accessories[0]->config_number=c_hash;
     
     homekit_server_init(&config);
